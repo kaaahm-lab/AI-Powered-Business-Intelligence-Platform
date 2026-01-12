@@ -196,7 +196,7 @@ public function runCompetitionAnalysis(Request $request)
         |--------------------------------------------------------------------------
         */
 
-        event(new \App\Events\IdeaAnalysisCompleted($idea));
+        //event(new \App\Events\IdeaAnalysisCompleted($idea));
 
         /*
         |--------------------------------------------------------------------------
@@ -207,7 +207,7 @@ public function runCompetitionAnalysis(Request $request)
                         return response()->json([
                     'status' => true,
 
-                    
+
                     'idea' => $data['idea'],
                     'competitors_summary' => $data['competitors_summary'],
                     'competitors' => $data['competitors'],
