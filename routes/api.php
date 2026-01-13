@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\MockAiController;
 use App\Http\Controllers\MockCompetitionAiController;
+use App\Http\Controllers\MockRegionAiController;
 use App\Http\Controllers\RecommendationController;
 
 /*
@@ -50,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/ideas/{id}', [IdeaController::class, 'show']);
     Route::post('/idea/update', [IdeaController::class, 'update']);
     Route::post('/idea/delete', [IdeaController::class, 'delete']);
+    Route::post('/ideas/region-analysis',[IdeaController::class, 'runRegionAnalysis']);
 
     // للمشرف
     Route::patch('/ideas/{id}/status', [IdeaController::class, 'updateStatus']);
@@ -59,6 +61,11 @@ Route::post('/mock-ai/competition', [MockCompetitionAiController::class, 'analyz
 Route::middleware('auth:sanctum')->post(
     '/ideas/competition-analysis',
     [IdeaController::class, 'runCompetitionAnalysis']
+);
+
+Route::post(
+    '/mock-ai/region',
+    [MockRegionAiController::class, 'analyze']
 );
 
 Route::middleware('auth:sanctum')->group(function () {

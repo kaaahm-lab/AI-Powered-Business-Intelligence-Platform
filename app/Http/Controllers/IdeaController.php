@@ -7,6 +7,7 @@ use App\Models\Competitor;
 use App\Models\Recommendation;
 use App\Models\AnalysisReport;
 use App\Models\FinancialEstimation;
+use App\Models\RegionAnalysis;
 use App\Models\SwotAnalysis;
 use App\Services\FirebaseNotificationService;
 use Illuminate\Http\Request;
@@ -131,7 +132,8 @@ public function runCompetitionAnalysis(Request $request)
         |--------------------------------------------------------------------------
         */
 
-        $response = Http::timeout(10)->post(
+        $response = Http::timeout(10)->acceptJson()
+    ->asJson()->post(
             'http://127.0.0.1:8001/api/mock-ai/competition',
             [
                 'idea_text'       => $idea->description,
@@ -144,8 +146,15 @@ public function runCompetitionAnalysis(Request $request)
         );
 
         if (!$response->successful()) {
-            throw new \Exception('Competition AI API failed');
-        }
+    return response()->json([
+        'status' => false,
+        'message' => 'Competition AI API failed',
+        'debug' => [
+            'status_code' => $response->status(),
+            'response'    => $response->body(),
+        ]
+    ], 500);
+}
 
         $data = $response->json();
 
@@ -218,6 +227,92 @@ public function runCompetitionAnalysis(Request $request)
 
     });
 }
+
+public function runRegionAnalysis(Request $request)
+{
+    return DB::transaction(function () use ($request) {
+
+        /*
+        |---------------------------------------------------------
+        | 1️⃣ جلب الفكرة
+        |---------------------------------------------------------
+        */
+        $idea = Idea::where('id', $request->idea_id)
+                    ->where('user_id', Auth::id())
+                    ->first();
+
+        if (!$idea) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Idea not found or unauthorized'
+            ], 404);
+        }
+
+        /*
+        |---------------------------------------------------------
+        | 2️⃣ جلب industry من Model 1
+        |---------------------------------------------------------
+        */
+        $classification = AnalysisReport::where('idea_id', $idea->id)
+                            ->latest()
+                            ->first();
+
+        if (!$classification || !$classification->predicted_category) {
+            throw new \Exception('Industry classification not found');
+        }
+
+        /*
+        |---------------------------------------------------------
+        | 3️⃣ إرسال Request إلى AI Model 3
+        |---------------------------------------------------------
+        */
+        $response = Http::timeout(10)->post(
+            'http://127.0.0.1:8001/api/mock-ai/region',
+            [
+                'industry' => strtolower($classification->predicted_category),
+                'k'        => $request->k ?? 3,
+            ]
+        );
+
+        if (!$response->successful()) {
+            throw new \Exception('Region AI API failed');
+        }
+
+        $data = $response->json();
+
+        /*
+        |---------------------------------------------------------
+        | 4️⃣ تخزين النتيجة
+        |---------------------------------------------------------
+        */
+        $region = RegionAnalysis::updateOrCreate(
+            ['idea_id' => $idea->id],
+            [
+                'predicted_region' => $data['predicted_region'],
+                'confidence'       => $data['confidence'],
+                'is_ambiguous'     => $data['is_ambiguous'],
+                'top_k'            => $data['top_k'],
+            ]
+        );
+
+        /*
+        |---------------------------------------------------------
+        | 5️⃣ Response مطابق لرد AI
+        |---------------------------------------------------------
+        */
+        return response()->json([
+            'predicted_region' => $region->predicted_region,
+            'confidence'       => $region->confidence,
+            'is_ambiguous'     => $region->is_ambiguous,
+            'top_k'            => $region->top_k,
+        ]);
+    });
+}
+
+
+
+
+
 
 
 

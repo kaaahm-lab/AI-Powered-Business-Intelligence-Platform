@@ -50,5 +50,9 @@ class Idea extends Model
 {
     return $this->hasOne(SwotAnalysis::class);
 }
+public function regionAnalysis()
+{
+    return $this->hasOne(RegionAnalysis::class);
+}
 
 }
