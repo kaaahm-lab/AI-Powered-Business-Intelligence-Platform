@@ -12,7 +12,7 @@ use App\Http\Controllers\MockAiController;
 use App\Http\Controllers\MockCompetitionAiController;
 use App\Http\Controllers\MockRegionAiController;
 use App\Http\Controllers\RecommendationController;
-
+use App\Http\Controllers\CommerceRegisterController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 
 });
+Route::get('commerce-registers/samples', [CommerceRegisterController::class, 'samples']);
 Route::middleware('auth:sanctum')->post('/user/fcm-token', [AuthManager::class, 'updateFcmToken']);
 
 
