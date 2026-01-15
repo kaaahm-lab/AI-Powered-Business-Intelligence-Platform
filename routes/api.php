@@ -13,6 +13,8 @@ use App\Http\Controllers\MockCompetitionAiController;
 use App\Http\Controllers\MockRegionAiController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\CommerceRegisterController;
+use App\Http\Controllers\MockAiController_pricePrediction;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -53,7 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/idea/update', [IdeaController::class, 'update']);
     Route::post('/idea/delete', [IdeaController::class, 'delete']);
     Route::post('/ideas/region-analysis',[IdeaController::class, 'runRegionAnalysis']);
-
+    Route::post('/ideas/property-price', [IdeaController::class, 'predictPropertyPrice']);
     // للمشرف
     Route::patch('/ideas/{id}/status', [IdeaController::class, 'updateStatus']);
 });
@@ -64,10 +66,8 @@ Route::middleware('auth:sanctum')->post(
     [IdeaController::class, 'runCompetitionAnalysis']
 );
 
-Route::post(
-    '/mock-ai/region',
-    [MockRegionAiController::class, 'analyze']
-);
+Route::post('/mock-ai/region', [MockRegionAiController::class, 'analyze']);
+Route::post('/mock-ai/price', [MockAiController_pricePrediction::class, 'pricePrediction']);
 
 Route::middleware('auth:sanctum')->group(function () {
 

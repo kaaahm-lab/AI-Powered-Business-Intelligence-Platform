@@ -7,6 +7,7 @@ use App\Models\Competitor;
 use App\Models\Recommendation;
 use App\Models\AnalysisReport;
 use App\Models\FinancialEstimation;
+use App\Models\PropertyPriceAnalysis;
 use App\Models\RegionAnalysis;
 use App\Models\SwotAnalysis;
 use App\Services\FirebaseNotificationService;
@@ -308,6 +309,78 @@ public function runRegionAnalysis(Request $request)
         ]);
     });
 }
+
+
+
+
+
+
+public function predictPropertyPrice(Request $request)
+{
+    $request->validate([
+        'idea_id' => 'required|integer',
+        'type' => 'required|in:Rent,Sale',
+        'furnishing_status' => 'nullable|string',
+        'sizeDescription' => 'required|in:small,medium,big',
+        'k' => 'required|integer|min:1|max:10',
+    ]);
+
+    $idea = Idea::where('id', $request->idea_id)
+                ->where('user_id', Auth::id())
+                ->firstOrFail();
+
+    $regionAnalysis = $idea->regionAnalysis;
+
+    if (!$regionAnalysis) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Region prediction not found'
+        ], 422);
+    }
+
+    $response = Http::timeout(10)->post(
+        'http://127.0.0.1:8001/api/mock-ai/price',
+        [
+            'type' => $request->type,
+            'region' => $regionAnalysis->predicted_region,
+            'furnishing_status' => $request->furnishing_status,
+            'sizeDescription' => $request->sizeDescription,
+            'k' => $request->k,
+        ]
+    );
+
+    $data = $response->json();
+
+    $analysis = PropertyPriceAnalysis::create([
+        'idea_id' => $idea->id,
+        'type' => $data['type'],
+        'region' => $regionAnalysis->predicted_region,
+        'furnishing_status' => $request->furnishing_status,
+        'size_description' => $request->sizeDescription,
+
+        'price_min' => $data['predicted_price_range']['min'],
+        'price_max' => $data['predicted_price_range']['max'],
+        'price_unit' => $data['predicted_price_range']['unit'],
+        'price_text' => $data['predicted_price_range']['text'],
+        'price_label' => $data['predicted_price_label'],
+        'price_confidence' => $data['price_confidence'],
+        'price_top_k' => $data['price_top_k'],
+
+        'size_min' => $data['predicted_size_range']['min'],
+        'size_max' => $data['predicted_size_range']['max'],
+        'size_unit' => $data['predicted_size_range']['unit'],
+        'size_text' => $data['predicted_size_range']['text'],
+        'size_label' => $data['predicted_size_label'],
+        'size_confidence' => $data['size_confidence'],
+        'size_top_k' => $data['size_top_k'],
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'data' => $analysis
+    ]);
+}
+
 
 
 

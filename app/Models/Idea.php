@@ -55,4 +55,11 @@ public function regionAnalysis()
     return $this->hasOne(RegionAnalysis::class);
 }
 
+public function propertyPriceAnalysis()
+{
+    return $this->hasOne(PropertyPriceAnalysis::class);
+}
+
+
+
 }
