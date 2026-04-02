@@ -500,7 +500,7 @@ class IdeaController extends Controller
             ]
         ]);
     }
-    public function reanalyze(Request $request)
+        public function reanalyze(Request $request)
     {
         $request->validate([
             'idea_id' => 'required|integer'
